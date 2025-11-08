@@ -3,26 +3,26 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>SVG clipPath — objectBoundingBox vs userSpaceOnUse</title>
+<title>SVG filterUnits — objectBoundingBox vs userSpaceOnUse</title>
 <style>
-  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;margin:20px;background:#f8fafc;color:#111}
-  h1{margin:0 0 12px}
-  .card{background:#fff;padding:14px;border-radius:10px;box-shadow:0 6px 16px rgba(0,0,0,.05)}
-  svg{background:linear-gradient(180deg,#fff,#f9fbff);border:1px dashed #d1d5db;border-radius:6px}
-  .controls{margin-bottom:12px;display:flex;flex-wrap:wrap;gap:10px}
-  button{padding:6px 10px;border-radius:6px;border:1px solid #ddd;background:#fff;cursor:pointer}
-  .grid{display:flex;gap:16px;flex-wrap:wrap}
-  .note{font-size:14px;color:#444;margin-top:8px}
+  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; margin: 20px; background: #f8fafc; color: #111; }
+  h1 { margin: 0 0 12px; }
+  .card { background: #fff; padding: 14px; border-radius: 10px; box-shadow: 0 6px 16px rgba(0,0,0,.05); }
+  svg { background: linear-gradient(180deg, #fff, #f9fbff); border: 1px dashed #d1d5db; border-radius: 6px; }
+  .controls { margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 10px; }
+  button { padding: 6px 10px; border-radius: 6px; border: 1px solid #ddd; background: #fff; cursor: pointer; }
+  .grid { display: flex; gap: 16px; flex-wrap: wrap; }
+  .note { font-size: 14px; color: #444; margin-top: 8px; }
 </style>
 </head>
 <body>
 
-<h1>ClipPath Units Demo</h1>
-<p>This demo shows the difference between <code>clipPathUnits="objectBoundingBox"</code> and <code>clipPathUnits="userSpaceOnUse"</code>.</p>
+<h1>Filter Units Demo</h1>
+<p>This demo compares <code>filterUnits="objectBoundingBox"</code> and <code>filterUnits="userSpaceOnUse"</code>.</p>
 
 <div class="card">
   <div class="controls">
-    <button id="toggleUnits">Toggle Units</button>
+    <button id="toggleUnits">Toggle Units (Left)</button>
     <button id="resizeSmall">Small Shapes</button>
     <button id="resizeWide">Wide Shapes</button>
   </div>
@@ -30,45 +30,43 @@
   <div class="grid">
     <!-- Left: objectBoundingBox -->
     <div>
-      <p><strong>Left:</strong> <code>clipPathUnits="objectBoundingBox"</code></p>
+      <p><strong>Left:</strong> <code>filterUnits="objectBoundingBox"</code></p>
       <svg id="svgObj" width="300" height="120" viewBox="0 0 300 120">
         <defs>
-          <clipPath id="clipObj" clipPathUnits="objectBoundingBox">
-            <!-- Circle coordinates from 0→1 -->
-            <circle cx="0.5" cy="0.5" r="0.5" />
-          </clipPath>
+          <filter id="blurObj" filterUnits="objectBoundingBox">
+            <feGaussianBlur stdDeviation="0.05" />
+          </filter>
         </defs>
 
-        <rect id="objRect1" x="20" y="10" width="120" height="100" fill="#f97316" clip-path="url(#clipObj)" />
-        <rect id="objRect2" x="160" y="10" width="80" height="50" fill="#10b981" clip-path="url(#clipObj)" />
+        <rect id="objRect1" x="20" y="10" width="120" height="100" fill="#6366f1" filter="url(#blurObj)" />
+        <rect id="objRect2" x="160" y="10" width="80" height="50" fill="#f97316" filter="url(#blurObj)" />
       </svg>
     </div>
 
     <!-- Right: userSpaceOnUse -->
     <div>
-      <p><strong>Right:</strong> <code>clipPathUnits="userSpaceOnUse"</code></p>
+      <p><strong>Right:</strong> <code>filterUnits="userSpaceOnUse"</code></p>
       <svg id="svgUsr" width="300" height="120" viewBox="0 0 300 120">
         <defs>
-          <clipPath id="clipUsr" clipPathUnits="userSpaceOnUse">
-            <!-- Circle defined in actual SVG coordinates -->
-            <circle cx="100" cy="60" r="45" />
-          </clipPath>
+          <filter id="blurUsr" filterUnits="userSpaceOnUse" x="0" y="0" width="300" height="120">
+            <feGaussianBlur stdDeviation="5" />
+          </filter>
         </defs>
 
-        <rect id="usrRect1" x="20" y="10" width="120" height="100" fill="#f97316" clip-path="url(#clipUsr)" />
-        <rect id="usrRect2" x="160" y="10" width="80" height="50" fill="#10b981" clip-path="url(#clipUsr)" />
+        <rect id="usrRect1" x="20" y="10" width="120" height="100" fill="#6366f1" filter="url(#blurUsr)" />
+        <rect id="usrRect2" x="160" y="10" width="80" height="50" fill="#f97316" filter="url(#blurUsr)" />
       </svg>
     </div>
   </div>
 
   <p class="note">
-    🔸 With <b>objectBoundingBox</b>, the circle (clip shape) is <em>relative</em> to each element’s box.<br>
-    🔹 With <b>userSpaceOnUse</b>, the circle is in <em>absolute SVG coordinates</em>, so all elements share the same clipping area.
+    🔸 <b>objectBoundingBox</b>: blur area and radius scale relative to each shape’s size.<br>
+    🔹 <b>userSpaceOnUse</b>: blur area is fixed in SVG coordinate space — all shapes share the same filter region.
   </p>
 </div>
 
 <script>
-  // helper to change rectangle sizes
+  // change rectangle sizes
   function setSize(mode) {
     const r1 = document.getElementById('objRect1');
     const r2 = document.getElementById('objRect2');
@@ -87,26 +85,30 @@
   document.getElementById('resizeSmall').addEventListener('click', ()=>setSize('small'));
   document.getElementById('resizeWide').addEventListener('click', ()=>setSize('wide'));
 
+  // toggle filter units on left SVG
   document.getElementById('toggleUnits').addEventListener('click', ()=>{
-    const clip = document.getElementById('clipObj');
-    const circle = clip.querySelector('circle');
-    const current = clip.getAttribute('clipPathUnits');
+    const filter = document.getElementById('blurObj');
+    const fe = filter.querySelector('feGaussianBlur');
+    const current = filter.getAttribute('filterUnits');
     if (current === 'objectBoundingBox') {
-      clip.setAttribute('clipPathUnits','userSpaceOnUse');
-      circle.setAttribute('cx','100');
-      circle.setAttribute('cy','60');
-      circle.setAttribute('r','45');
-      alert('Left clipPath now uses userSpaceOnUse (fixed SVG coordinates)');
+      filter.setAttribute('filterUnits','userSpaceOnUse');
+      filter.setAttribute('x','0');
+      filter.setAttribute('y','0');
+      filter.setAttribute('width','300');
+      filter.setAttribute('height','120');
+      fe.setAttribute('stdDeviation','5');
+      alert('Left filter now uses userSpaceOnUse (absolute SVG coordinates)');
     } else {
-      clip.setAttribute('clipPathUnits','objectBoundingBox');
-      circle.setAttribute('cx','0.5');
-      circle.setAttribute('cy','0.5');
-      circle.setAttribute('r','0.5');
-      alert('Left clipPath now uses objectBoundingBox (relative 0→1 coordinates)');
+      filter.setAttribute('filterUnits','objectBoundingBox');
+      filter.removeAttribute('x');
+      filter.removeAttribute('y');
+      filter.removeAttribute('width');
+      filter.removeAttribute('height');
+      fe.setAttribute('stdDeviation','0.05');
+      alert('Left filter now uses objectBoundingBox (relative to each element’s box)');
     }
   });
 
-  // initialize
   setSize('small');
 </script>
 
